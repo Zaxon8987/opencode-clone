@@ -37,6 +37,7 @@ class Agent:
     def __init__(self) -> None:
         self.registry = ToolRegistry()
         self._register_tools()
+        self.registry.set_tier_from_license()
         self.llm = LLM(self.registry)
         self.messages: list[dict] = []
 
@@ -46,10 +47,36 @@ class Agent:
 
     def reset(self) -> None:
         self.messages = []
+        self.registry.set_tier_from_license()
+
+    def _build_system_prompt(self) -> str:
+        tools = self.registry.list_anthropic()
+        lines = ["You are opencode, an AI coding assistant that helps users with software engineering tasks.",
+                 "",
+                 "Available tools:"]
+        for t in tools:
+            lines.append(f"- **{t['name']}** — {t['description']}")
+        lines.extend([
+            "",
+            "Rules:",
+            "1. Be concise and direct. Prefer action over explanation.",
+            "2. Read files before editing them.",
+            "3. After completing a task, summarize what was done concisely.",
+            "4. Never commit secrets or credentials.",
+            "5. When uncertain, ask the user with the question tool.",
+            "6. Run verification commands before claiming work is done.",
+            "7. Never make up information — use tools to verify.",
+        ])
+        return "\n".join(lines)
 
     def add_system(self) -> None:
+        prompt = self._build_system_prompt()
         if not any(m["role"] == "system" for m in self.messages):
-            self.messages.insert(0, {"role": "system", "content": SYSTEM_PROMPT})
+            self.messages.insert(0, {"role": "system", "content": prompt})
+        else:
+            for m in self.messages:
+                if m["role"] == "system":
+                    m["content"] = prompt
 
     async def run(self, user_input: str) -> None:
         self.messages.append({"role": "user", "content": user_input})

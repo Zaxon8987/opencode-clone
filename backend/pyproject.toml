@@ -1,0 +1,17 @@
+[project]
+name = "opencode-backend"
+version = "0.1.0"
+description = "License & subscription server for opencode-cli"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "stripe>=11.0.0",
+    "sqlite-utils>=3.37",
+    "httpx>=0.28.0",
+    "pydantic>=2.0.0",
+    "pyjwt>=2.9.0",
+]
+
+[project.scripts]
+opencode-server = "main:serve"
