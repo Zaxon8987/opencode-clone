@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>opencode Pro — Subscribe</title>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0f0f0f; color: #e5e5e5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: 48px; max-width: 480px; width: 90%; text-align: center; }
+  h1 { font-size: 28px; margin-bottom: 8px; }
+  .price { font-size: 48px; font-weight: 700; color: #fff; margin: 24px 0 8px; }
+  .price span { font-size: 20px; color: #888; }
+  .period { color: #888; margin-bottom: 32px; }
+  ul { text-align: left; list-style: none; margin: 24px 0; }
+  li { padding: 8px 0; color: #aaa; }
+  li::before { content: "\2713 "; color: #22c55e; }
+  button { width: 100%; padding: 14px; border: none; border-radius: 8px; background: #22c55e; color: #000; font-size: 16px; font-weight: 600; cursor: pointer; }
+  button:hover { background: #16a34a; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .error { color: #ef4444; margin-top: 16px; display: none; }
+  .footer { margin-top: 24px; font-size: 13px; color: #555; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>opencode Pro</h1>
+  <p style="color:#888;">AI coding assistant — full power</p>
+  <div class="price">$9.99 <span>/mo</span></div>
+  <div class="period">Cancel anytime</div>
+  <ul>
+    <li>All 19 tools including bash, web, git</li>
+    <li>GitHub PR, issue, and CI management</li>
+    <li>Domain skills: security, database, deploy</li>
+    <li>Project auto-detection &amp; learning memory</li>
+    <li>Priority support</li>
+  </ul>
+  <form id="checkout-form">
+    <button id="submit-btn" type="submit">Subscribe to Pro</button>
+  </form>
+  <div id="error-msg" class="error"></div>
+  <div class="footer">Secure payment via Stripe</div>
+</div>
+
+<script>
+const stripe = Stripe("pk_test_51TWXmYH0cYpSWWX3PRTwHvafOXBc6IVLTj3dbQ4Xadp0p8zq5urXXbmOrJH7xj4BWpHfq5y5wcuGScZ7ouOXpb3l00bOnKzbqG");
+
+document.getElementById("checkout-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("submit-btn");
+  const err = document.getElementById("error-msg");
+  btn.disabled = true;
+  err.style.display = "none";
+  try {
+    // Get email from user
+    const email = prompt("Enter your email:", "") || "user@example.com";
+    const res = await fetch("http://localhost:8000/checkout/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, name: email.split("@")[0] }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url; // Redirect to Stripe Checkout
+    } else {
+      throw new Error(data.detail || "Failed to create session");
+    }
+  } catch (e) {
+    err.textContent = e.message;
+    err.style.display = "block";
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
