@@ -3,9 +3,12 @@ import json
 from src.llm import LLM
 from src.context import SessionContext
 from src.tools import (
-    ToolRegistry, Bash, Read, Write, Edit, Glob, Grep,
+    ToolRegistry,
+    Bash, Read, Write, Edit, Glob, Grep,
     WebSearch, WebFetch, Git, Question,
     TodoWrite, Verify, Spawn,
+    GitHub, LoadSkill, ListSkills, ProjectInfo,
+    Learn, Recall,
 )
 
 MAX_TURNS = 25
@@ -25,6 +28,8 @@ class Agent:
             Bash, Read, Write, Edit, Glob, Grep,
             WebSearch, WebFetch, Git, Question,
             TodoWrite, Verify, Spawn,
+            GitHub, LoadSkill, ListSkills, ProjectInfo,
+            Learn, Recall,
         ]:
             self.registry.add(tool())
 
@@ -49,10 +54,14 @@ class Agent:
             "3. Use the todo tool to track progress on multi-step tasks.",
             "4. After changing code, use the verify tool to run tests/lint.",
             "5. For independent tasks, use the spawn tool to parallelize.",
-            "6. Never commit secrets or credentials.",
-            "7. When uncertain, ask the user with the question tool.",
-            "8. Never make up information — use tools to verify.",
-            "9. If something fails twice, try a different approach.",
+            "6. Use load_skill for domain-specific work (security, DB, deploy).",
+            "7. Use recall before starting to check past learnings.",
+            "8. Use project_info on startup to understand the codebase.",
+            "9. Use github for PRs, issues, and CI operations.",
+            "10. Never commit secrets or credentials.",
+            "11. When uncertain, ask the user with the question tool.",
+            "12. Never make up information — use tools to verify.",
+            "13. If something fails twice, try a different approach.",
         ])
         return "\n".join(lines)
 

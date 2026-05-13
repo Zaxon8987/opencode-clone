@@ -39,15 +39,37 @@ def show_help() -> None:
 Commands:
   /exit, /quit          Exit
   /reset                Reset conversation
+  /help                 Show this help
+
+Licensing:
   /license <key>        Activate a license key
   /plan                 Show current plan + allowed tools
+
+Tasks:
   /todo                 Show task list
   /todo add <task>      Add a task
   /todo done <id>       Mark task complete
-  /terse                Toggle compact output mode
-  /ctx                  Show session context
+
+Session:
+  /ctx                  Show session context (files, errors, tasks)
   /save                 Save session state
-  /help                 Show this help
+  /terse                Toggle compact output mode
+
+Skills:
+  /skills               List available skills
+  /skill <name>         Load a skill (security-audit, database-design, ...)
+
+GitHub:
+  /gh prs               List open PRs
+  /gh issues            List open issues
+  /gh ci                Check CI status on current branch
+
+Learnings:
+  /learnings            Show all stored learnings
+  /forget <key>         Remove a learning
+
+Project:
+  /project              Detect project stack and frameworks
 """)
 
 
@@ -162,6 +184,89 @@ async def repl() -> None:
         if cmd == "/save":
             agent.ctx.save()
             print("Session saved.")
+            continue
+
+        if cmd == "/skills":
+            from src.tools.skill import ListSkills
+            sk = ListSkills()
+            result = await sk.run()
+            if result.success:
+                for s in result.data:
+                    print(f"  {s['name']} — {s['description']}")
+            continue
+
+        if cmd.startswith("/skill"):
+            parts = inp.split(None, 1)
+            if len(parts) < 2:
+                print("Usage: /skill <name>")
+                continue
+            from src.tools.skill import LoadSkill
+            ls = LoadSkill()
+            result = await ls.run(name=parts[1])
+            if result.success:
+                print(f"Skill '{parts[1]}' loaded.")
+            else:
+                print(f"Error: {result.error}")
+            continue
+
+        if cmd == "/learnings":
+            from src.tools.learn import Recall
+            rc = Recall()
+            result = await rc.run()
+            if result.success:
+                print(result.data)
+            continue
+
+        if cmd.startswith("/forget"):
+            from src.tools.learn import _load, _save
+            parts = inp.split(None, 1)
+            if len(parts) < 2:
+                print("Usage: /forget <key>")
+                continue
+            data = _load()
+            data = [d for d in data if d["key"] != parts[1]]
+            _save(data)
+            print(f"Forgotten: {parts[1]}")
+            continue
+
+        if cmd == "/project":
+            from src.tools.project import ProjectInfo
+            pi = ProjectInfo()
+            result = await pi.run()
+            if result.success:
+                p = result.data
+                print(f"Project: {p['name']}")
+                print(f"Languages: {', '.join(p['languages']) or 'None detected'}")
+                print(f"Frameworks: {', '.join(p['frameworks']) or 'None detected'}")
+                print(f"Config files: {', '.join(p['config_files'].keys()) or 'None'}")
+            continue
+
+        if cmd == "/gh prs":
+            from src.tools.github import GitHub
+            gh = GitHub()
+            result = await gh.run(action="pr_list")
+            if result.success:
+                for pr in (result.data or []):
+                    print(f"  #{pr['number']} {pr['title']} [{pr['state']}]")
+            continue
+
+        if cmd == "/gh issues":
+            from src.tools.github import GitHub
+            gh = GitHub()
+            result = await gh.run(action="issue_list")
+            if result.success:
+                for iss in (result.data or []):
+                    print(f"  #{iss['number']} {iss['title']} [{iss['state']}]")
+            continue
+
+        if cmd == "/gh ci":
+            from src.tools.github import GitHub
+            gh = GitHub()
+            result = await gh.run(action="ci_view")
+            if result.success:
+                for run in (result.data or []):
+                    status = run.get("conclusion") or run.get("status", "?")
+                    print(f"  {run['displayTitle']}: {status}")
             continue
 
         agent.registry.set_tier_from_license()
