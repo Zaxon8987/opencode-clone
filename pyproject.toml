@@ -1,0 +1,12 @@
+[project]
+name = "opencode-cli"
+version = "0.1.0"
+description = "AI coding agent — clone of opencode"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.28.0",
+    "httpx-sse>=0.4.0",
+]
+
+[project.scripts]
+opencode = "main:main"
